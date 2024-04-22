@@ -11,8 +11,8 @@ public:
     }
     void run()
     {
-        this->rawval = this->readFunc(this->pin);
-        this->filtval = this->alpha * this->filtval + (1 - this->alpha) * this->rawval;
+        this->filtval = this->readFunc(this->pin);
+        // this->filtval = this->alpha * this->filtval + (1 - this->alpha) * this->rawval;
     }
     uint16_t getValue()
     {

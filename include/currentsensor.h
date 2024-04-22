@@ -8,11 +8,11 @@
 class current_sensor
 {
 public:
-    current_sensor(analogSensor *sensor, const float scale) : sensor(sensor), scale(scale) {}
+    current_sensor(analogSensor *sensor, const float scale, const float offset = 0) : sensor(sensor), scale(scale), offset(offset) {}
     void run()
     {
         this->sensor->run();
-        this->current = static_cast<float>(sensor->getVoltage()) * scale;
+        this->current = (sensor->getVoltage()+offset) * scale;
     }
     float getCurrent()
     {
@@ -23,5 +23,6 @@ private:
     analogSensor *sensor;
     const float scale;
     float current;
+    float offset;
 };
 #endif
