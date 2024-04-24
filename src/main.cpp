@@ -27,7 +27,7 @@ const float current_sensors_scale = 10; // 0.1v per amp
 current_sensor shunt_left = current_sensor(&adc_shunt_left, current_sensors_scale, -2.45);
 current_sensor shunt_right = current_sensor(&adc_shunt_right, current_sensors_scale, -2.45);
 
-const float SERVO_CURRENT_LIM = 1.0;
+const float SERVO_CURRENT_LIM = 5.0;
 const float servos_angle_range[] = {0, 180};
 Servo leftservo_;
 Servo rightservo_;
@@ -51,7 +51,7 @@ void setup()
 
   // Init Serial
   Serial.begin(9600);
-  Serial.setTimeout(0);
+  // Serial.setTimeout(0);
 
   // Init MCP
   Serial.println(can.begin(MCP_ANY, CAN_500KBPS, MCP_8MHZ));
@@ -59,7 +59,7 @@ void setup()
 
   // Calibrate DRS
   drs.calibrate();
-
+  // drs.setAngle(DRS_MIDDLE_ANGLE_HARDCODED);
   last_time = millis();
 }
 /* Joe Aero Pseudo Code
@@ -82,22 +82,15 @@ float angle = 0;
 bool closed = false;
 void loop()
 {
+  // poll_can();
   drs.updateCurrents();
-  poll_can();
-  // drs.setAngle(angle);
-  // angle+=0.5;
-  // if (angle > 180)
-  // {
-  //   angle = 0;
-  // }
-  // delay(5);
   // if (driver_inputs.bse1_travel > 20)
   // {
   //   drs.setClosed();
   // }
   // else if (driver_inputs.bse1_travel < 20 && driver_inputs.apps1_travel > 50)
   // {
-
+  //   drs.setOpen();
   // }
 
   if (millis() - last_time > superloop_debug)
@@ -117,16 +110,17 @@ void loop()
     last_time = millis();
   }
 
-  // if (Serial.available())
-  // {                                             // Check if data is available to read
-  //   String data = Serial.readStringUntil('\n'); // Read the data until newline character is received
-  //   float number = data.toFloat();              // Convert the received string to float
+  if (Serial.available() > 0)
+  {                                             // Check if data is available to read
+    String data = Serial.readStringUntil('\n'); // Read the data until newline character is received
+    float number = data.toFloat();              // Convert the received string to float
 
-  //   // Print the received float number
-  //   Serial.print("Received number: ");
-  //   Serial.println(number);
-  // }
-  Serial.println(shunt_right.getCurrent());
+    // Print the received float number
+    Serial.print("Received number: ");
+    Serial.println(number);
+    drs.setAngle(number);
+  }
+  // Serial.println(shunt_right.getCurrent());
 }
 
 int poll_can()

@@ -10,7 +10,9 @@
 #include <servo.h>
 const float PWM_FREQUENCY = 490;
 const float max_period_us = 1 / PWM_FREQUENCY * 1000000;
-
+const float DRS_MAX_ANGLE_HARDCODED = 110;
+const float DRS_MIN_ANGLE_HARDCODED = 45;
+const float DRS_MIDDLE_ANGLE_HARDCODED = (DRS_MIN_ANGLE_HARDCODED+DRS_MAX_ANGLE_HARDCODED)/2;
 class ksu_servo
 {
 public:
@@ -26,6 +28,7 @@ public:
     }
     void setAngle(float angle)
     {
+        // Serial.println(angle);
         constrain(angle, lowAngle, highAngle);
         // calculate needed duty cycle
         float percentAngle = angle / highAngle; // gives us the percent we are aiming for
@@ -33,9 +36,9 @@ public:
         {
             percentAngle = (float)1.0 - percentAngle;
         }
-        Serial.println(percentAngle);
+        // Serial.println(percentAngle);
         float us = 500 + percentAngle * 2000.0;
-        Serial.println(us);
+        // Serial.println(us);
 #ifdef ARDUINO
         myServo->writeMicroseconds(us);
 #else
@@ -80,6 +83,10 @@ public:
     }
     void setAngle(float angle)
     {
+        if (angle > DRS_MAX_ANGLE_HARDCODED || angle < DRS_MIN_ANGLE_HARDCODED)
+        {
+            angle = min(max(DRS_MIN_ANGLE_HARDCODED,angle),DRS_MAX_ANGLE_HARDCODED);
+        }
         left_servo->setAngle(angle);
         right_servo->setAngle(angle);
     }
@@ -90,36 +97,42 @@ public:
     }
     void calibrate()
     {
-        float calibrationAngle = 90;
+        this->updateCurrents();
+        delay(500);
+        float calibrationAngle = DRS_MIDDLE_ANGLE_HARDCODED;
         left_servo->setAngle(calibrationAngle);
         right_servo->setAngle(calibrationAngle);
-
-        while ((left_servo->getCurrent() < left_servo->getCurrentLim() || right_servo->getCurrent() < right_servo->getCurrentLim()) && calibrationAngle <= 180)
+        delay(500);
+        this->updateCurrents();
+        while ((left_servo->getCurrent() < left_servo->getCurrentLim() || right_servo->getCurrent() < right_servo->getCurrentLim()) && calibrationAngle <= DRS_MAX_ANGLE_HARDCODED)
         {
             this->updateCurrents();
             this->setAngle(calibrationAngle);
             calibrationAngle += 0.01;
         }
         // back off like 2 degrees
-        maxAngle = calibrationAngle - 2;
-        calibrationAngle = 90;
+        maxAngle = calibrationAngle;
+        calibrationAngle = DRS_MIDDLE_ANGLE_HARDCODED;
+        Serial.println("Max ANGLE: ");
+        Serial.println(maxAngle);
         delay(1000);
         this->setAngle(calibrationAngle);
+        delay(1000);
         this->updateCurrents();
         delay(1000);
-        while ((left_servo->getCurrent() < left_servo->getCurrentLim() || right_servo->getCurrent() < right_servo->getCurrentLim()) && calibrationAngle >= 0)
+        while ((left_servo->getCurrent() < left_servo->getCurrentLim() || right_servo->getCurrent() < right_servo->getCurrentLim()) && calibrationAngle >= DRS_MIN_ANGLE_HARDCODED)
         {
             this->updateCurrents();
             this->setAngle(calibrationAngle);
             calibrationAngle -= 0.01;
         }
         // bump up like 2 degrees
-        minAngle = calibrationAngle + 2;
+        minAngle = calibrationAngle;
         Serial.print("Min angle:");
         Serial.println(minAngle);
         Serial.print("Max angle:");
         Serial.println(maxAngle);
-        setAngle(90);
+        setAngle(DRS_MIDDLE_ANGLE_HARDCODED);
         delay(1000);
         setAngle(maxAngle);
         delay(1000);
